@@ -1,0 +1,26 @@
+trigger:
+- main
+
+pool:
+  name: PythonDemoPool
+
+steps:
+
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.12'
+  displayName: 'Use Python 3.12'
+
+- script: |
+    python --version
+    python -m pip --version
+  displayName: 'Verify Python installation'
+
+- script: |
+    python -m pip install --upgrade pip
+    python -m pip install -r requirements.txt
+  displayName: 'Install dependencies'
+
+- script: |
+    python -m pytest
+  displayName: 'Run unit tests'
