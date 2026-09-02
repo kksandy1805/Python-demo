@@ -7,7 +7,7 @@ def test_home():
     response = client.get("/")
 
     assert response.status_code == 200
-    assert b"Hello from Python Flask App" in response.data
+    assert b"Hello from Python Flask! CI/CD and Approval Gates are working." in response.data
 
 
 def test_health():
