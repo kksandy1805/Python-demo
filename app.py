@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Hello from Python Flask App running on Azure App Service!-updated"
+    return "Hello from Python Flask App running on Azure App Service!-updated 2.0"
 
 
 @app.route("/health")
