@@ -19,3 +19,20 @@ steps:
 - script: |
     D:\Python312New\python.exe -m pytest
   displayName: 'Run unit tests'
+
+- task: ArchiveFiles@2
+  displayName: 'Package Python application'
+  inputs:
+    rootFolderOrFile: '$(Build.SourcesDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/python-app.zip'
+    replaceExistingArchive: true
+
+- task: AzureWebApp@1
+  displayName: 'Deploy to Azure App Service'
+  inputs:
+    azureSubscription: 'PythonDemo-Azure-Connection'
+    appType: 'webAppLinux'
+    appName: 'python-devops-demo-001'
+    package: '$(Build.ArtifactStagingDirectory)/python-app.zip'
