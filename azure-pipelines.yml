@@ -4,35 +4,69 @@ trigger:
 pool:
   name: PythonDemoPool
 
-steps:
+stages:
 
-- script: |
-    D:\Python312New\python.exe --version
-    D:\Python312New\python.exe -m pip --version
-  displayName: 'Verify Python 3.12'
+- stage: Build
+  displayName: 'Build and Test'
 
-- script: |
-    D:\Python312New\python.exe -m pip install --upgrade pip
-    D:\Python312New\python.exe -m pip install -r requirements.txt
-  displayName: 'Install dependencies'
+  jobs:
+  - job: Build
+    displayName: 'Build Python Application'
 
-- script: |
-    D:\Python312New\python.exe -m pytest
-  displayName: 'Run unit tests'
+    steps:
 
-- task: ArchiveFiles@2
-  displayName: 'Package Python application'
-  inputs:
-    rootFolderOrFile: '$(Build.SourcesDirectory)'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/python-app.zip'
-    replaceExistingArchive: true
+    - script: |
+        D:\Python312New\python.exe --version
+        D:\Python312New\python.exe -m pip --version
+      displayName: 'Verify Python 3.12'
 
-- task: AzureWebApp@1
-  displayName: 'Deploy to Azure App Service'
-  inputs:
-    azureSubscription: 'PythonDemo-Azure-Connection'
-    appType: 'webAppLinux'
-    appName: 'python-devops-demo-001'
-    package: '$(Build.ArtifactStagingDirectory)/python-app.zip'
+    - script: |
+        D:\Python312New\python.exe -m pip install --upgrade pip
+        D:\Python312New\python.exe -m pip install -r requirements.txt
+      displayName: 'Install dependencies'
+
+    - script: |
+        D:\Python312New\python.exe -m pytest
+      displayName: 'Run unit tests'
+
+    - task: ArchiveFiles@2
+      displayName: 'Package Python application'
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/python-app.zip'
+        replaceExistingArchive: true
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish application artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/python-app.zip'
+        artifact: 'python-app'
+
+- stage: Deploy_DEV
+  displayName: 'Deploy to DEV'
+
+  dependsOn: Build
+
+  jobs:
+  - deployment: Deploy
+    environment: DEV
+
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              buildType: 'current'
+              artifactName: 'python-app'
+              targetPath: '$(Pipeline.Workspace)/python-app'
+
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: 'PythonDemo-Azure-Connection'
+              appType: 'webAppLinux'
+              appName: 'python-devops-demo-001'
+              package: '$(Pipeline.Workspace)/python-app/python-app.zip'
